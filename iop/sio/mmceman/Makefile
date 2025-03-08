@@ -19,7 +19,7 @@ IOP_INCS += \
 	-I$(PS2SDKSRC)/iop/system/stdio/include \
 	-I$(PS2SDKSRC)/iop/system/sysclib/include \
 	-I$(PS2SDKSRC)/iop/system/threadman/include \
-	-I$(PS2SDKSRC)/iop/system/iomanX/include 
+	-I$(PS2SDKSRC)/iop/system/iomanx/include 
 
 ifeq ($(DEBUG), 1)
   $(info -- MMCEMAN debug enabled)
