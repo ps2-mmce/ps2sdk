@@ -110,7 +110,7 @@ int mmce_fs_open(iomanX_iop_file_t *file, const char *name, int flags, int mode)
     }
 
     //Packet #2: Filename
-    res = mmce_sio2_tx_rx_pio(filename_len, 0x0, name, NULL, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(filename_len, 0x0, (u8*)name, NULL, &timeout_1s);
     if (res == -1) {
         DPRINTF("%s ERROR: P2 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -425,7 +425,7 @@ int mmce_fs_remove(iomanX_iop_file_t *file, const char *name)
     }
 
     //Packet #2: Filename
-    res = mmce_sio2_tx_rx_pio(filename_len, 0x0, name, NULL, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(filename_len, 0x0, (u8*)name, NULL, &timeout_1s);
     if (res == -1) {
         DPRINTF("%s ERROR: P2 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -484,7 +484,7 @@ int mmce_fs_mkdir(iomanX_iop_file_t *file, const char *name, int flags)
     }
 
     //Packet #2: Dirname
-    res = mmce_sio2_tx_rx_pio(dir_len, 0x0, name, NULL, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(dir_len, 0x0, (u8*)name, NULL, &timeout_1s);
     if (res == -1) {
         DPRINTF("%s ERROR: P2 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -543,7 +543,7 @@ int mmce_fs_rmdir(iomanX_iop_file_t *file, const char *name)
     }
 
     //Packet #2: Dirname
-    res = mmce_sio2_tx_rx_pio(dir_len, 0x0, name, NULL, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(dir_len, 0x0, (u8*)name, NULL, &timeout_1s);
     if (res == -1) {
         DPRINTF("%s ERROR: P2 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -609,7 +609,7 @@ int mmce_fs_dopen(iomanX_iop_file_t *file, const char *name)
     }
 
     //Packet #2: Dirname
-    res = mmce_sio2_tx_rx_pio(dir_len, 0x0, name, NULL, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(dir_len, 0x0, (u8*)name, NULL, &timeout_1s);
     if (res == -1) {
         DPRINTF("%s ERROR: P2 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -780,7 +780,7 @@ int mmce_fs_dread(iomanX_iop_file_t *file, iox_dirent_t *dirent)
     filename_len = rdbuf[0x29];
 
     //Packet #n + 2: Filename
-    res = mmce_sio2_tx_rx_pio(0x0, filename_len, NULL, dirent->name, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(0x0, filename_len, NULL, (u8*)dirent->name, &timeout_1s);
     if (res == -1) {
         DPRINTF("%s ERROR: P4 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -834,7 +834,7 @@ int mmce_fs_getstat(iomanX_iop_file_t *file, const char *name, iox_stat_t *stat)
     }
 
     //Packet #2: Filename
-    res = mmce_sio2_tx_rx_pio(len, 0x0, name, NULL, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(len, 0x0, (u8*)name, NULL, &timeout_1s);
     if (res == -1) {
         DPRINTF("%s ERROR: P2 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
