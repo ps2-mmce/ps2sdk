@@ -237,7 +237,7 @@ int mmce_cmd_set_gameid(void *ptr)
     wrbuf[0x2] = MMCE_RESERVED;       //reserved byte
     wrbuf[0x3] = len;                 //gameid length
 
-    char *str = &wrbuf[0x4];
+    char *str = (char*)&wrbuf[0x4];
     strcpy(str, ptr);
 
     mmce_sio2_lock();
