@@ -19,6 +19,11 @@ ifeq ($(DEBUG), 1)
   IOP_CFLAGS += -DDEBUG=1
 endif
 
-include $(PS2SDK)/Defs.make
-include $(PS2SDK)/samples/Makefile.pref
-include $(PS2SDK)/samples/Makefile.iopglobal
+#include $(PS2SDK)/Defs.make
+#include $(PS2SDK)/samples/Makefile.pref
+#include $(PS2SDK)/samples/Makefile.iopglobal
+
+include $(PS2SDKSRC)/Defs.make
+include $(PS2SDKSRC)/iop/Rules.bin.make
+include $(PS2SDKSRC)/iop/Rules.make
+include $(PS2SDKSRC)/iop/Rules.release
