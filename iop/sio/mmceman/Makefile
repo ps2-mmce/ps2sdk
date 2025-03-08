@@ -1,3 +1,11 @@
+# _____     ___ ____     ___ ____
+#  ____|   |    ____|   |        | |____|
+# |     ___|   |____ ___|    ____| |    \    PS2DEV Open Source Project.
+#-----------------------------------------------------------------------
+# Copyright 2001-2004, ps2dev - http://www.ps2dev.org
+# Licenced under Academic Free License version 2.0
+# Review ps2sdk README & LICENSE files for further details.
+
 $(info -- MMCEMAN)
 #Build full MMCEMAN for use with loader / homebrew
 IOP_OBJS = ioplib.o sio2man_hook.o mmce_sio2.o mmce_cmds.o mmce_fs.o imports.o mmceman.o
@@ -10,7 +18,8 @@ IOP_INCS += \
 	-I$(PS2SDKSRC)/iop/system/sio2man/include \
 	-I$(PS2SDKSRC)/iop/system/stdio/include \
 	-I$(PS2SDKSRC)/iop/system/sysclib/include \
-	-I$(PS2SDKSRC)/iop/system/threadman/include
+	-I$(PS2SDKSRC)/iop/system/threadman/include \
+	-I$(PS2SDKSRC)/iop/system/iomanX/include 
 
 ifeq ($(DEBUG), 1)
   $(info -- MMCEMAN debug enabled)
