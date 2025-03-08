@@ -212,7 +212,7 @@ int mmce_cmd_get_gameid(void *ptr)
     }
 
     if (rdbuf[0x1] == MMCE_REPLY_CONST) {
-        char* str = &rdbuf[0x4];
+        char* str = (char*)&rdbuf[0x4];
         strcpy(ptr, str);
         res = 0;
     } else {
