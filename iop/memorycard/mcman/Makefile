@@ -15,22 +15,25 @@ MCMAN_BUILDING_XFROMMAN ?= 0
 # Read from a file on the filesystem insead of the memory card?
 MCMAN_BUILDING_VMCMAN ?= 0
 
+# Support for arcade PS2
+MCMAN_BUILDING_DONGLEMAN ?= 0
+
 # IOP_CFLAGS += -DSIO_DEBUG -DDEBUG
 
-IOP_INCS += \
-    -I$(PS2SDKSRC)/iop/cdvd/cdvdman/include \
-    -I$(PS2SDKSRC)/iop/debug/sior/include \
-    -I$(PS2SDKSRC)/iop/security/secrman/include \
-    -I$(PS2SDKSRC)/iop/system/intrman/include \
-    -I$(PS2SDKSRC)/iop/system/ioman/include \
-    -I$(PS2SDKSRC)/iop/system/iomanx/include \
-    -I$(PS2SDKSRC)/iop/system/loadcore/include \
-    -I$(PS2SDKSRC)/iop/system/modload/include \
-    -I$(PS2SDKSRC)/iop/system/sio2man/include \
-    -I$(PS2SDKSRC)/iop/system/stdio/include \
-    -I$(PS2SDKSRC)/iop/system/sysclib/include \
-    -I$(PS2SDKSRC)/iop/system/threadman/include \
-    -I$(PS2SDKSRC)/iop/system/timrman/include
+IOP_IMPORT_INCS += \
+    cdvd/cdvdman \
+    debug/sior \
+    security/secrman \
+    system/intrman \
+    system/ioman \
+    system/iomanx \
+    system/loadcore \
+    system/modload \
+    system/sio2man \
+    system/stdio \
+    system/sysclib \
+    system/threadman \
+    system/timrman
 
 IOP_OBJS = \
     main.o \
@@ -48,13 +51,17 @@ endif
 
 ifneq (x$(MCMAN_BUILDING_XFROMMAN),x0)
 IOP_CFLAGS += -DBUILDING_XFROMMAN
-IOP_INCS += -I$(PS2SDKSRC)/iop/dev9/extflash/include
+IOP_IMPORT_INCS += dev9/extflash
 endif
 
 ifneq (x$(MCMAN_BUILDING_VMCMAN),x0)
 IOP_CFLAGS += -DBUILDING_VMCMAN
 IOP_CFLAGS += -DIOMANX_OLD_NAME_COMPATIBILITY=0
 IOP_CFLAGS += -DIOMANX_OLD_NAME_ADDDELDRV=0
+endif
+
+ifneq (x$(MCMAN_BUILDING_DONGLEMAN),x0)
+IOP_CFLAGS += -DBUILDING_DONGLEMAN
 endif
 
 include $(PS2SDKSRC)/Defs.make
