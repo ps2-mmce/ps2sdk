@@ -25,13 +25,13 @@ extern void mmce_sio2_lock();
 extern void mmce_sio2_unlock();
 
 //RX TX PIO single transfer (1-256 bytes)
-extern int mmce_sio2_tx_rx_pio(u8 port, u8 tx_size, u8 rx_size, const u8 *tx_buf, u8 *rx_buf, u8 timeout);
+extern int mmce_sio2_tx_rx_pio(u8 port, u8 tx_size, u8 rx_size, u8 *tx_buf, u8 *rx_buf, u8 timeout);
 
 //RX DMA n * 256, PIO remainder
 extern int mmce_sio2_rx(u8 port, u8 *buffer, u32 size, u8 timeout);
 
 //TX DMA n * 256, PIO remainder
-extern int mmce_sio2_tx(u8 port, const u8 *buffer, u32 size, u8 timeout);
+extern int mmce_sio2_tx(u8 port, u8 *buffer, u32 size, u8 timeout);
 
 #define mmcesio2_IMPORTS_start DECLARE_IMPORT_TABLE(mmcesio2, 1, 1)
 #define mmcesio2_IMPORTS_end   END_IMPORT_TABLE
