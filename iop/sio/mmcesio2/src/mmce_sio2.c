@@ -111,7 +111,7 @@ void mmce_sio2_unlock()
     sio2man_hook_sio2_unlock();
 }
 
-int mmce_sio2_tx_rx_pio(u8 port, u8 tx_size, u8 rx_size, u8 *tx_buf, u8 *rx_buf, u8 timeout)
+int mmce_sio2_tx_rx_pio(u8 port, u8 tx_size, u8 rx_size, const u8 *tx_buf, u8 *rx_buf, u8 timeout)
 {
     u32 resbits;
     u8 use_ack_timeout = 0;
@@ -346,7 +346,7 @@ int mmce_sio2_rx(u8 port, u8 *buffer, u32 size, u8 timeout)
     return 0;
 }
 
-int mmce_sio2_tx(u8 port, u8 *buffer, u32 size, u8 timeout)
+int mmce_sio2_tx(u8 port, const u8 *buffer, u32 size, u8 timeout)
 {
     u32 resbits;
     u8 use_ack_timeout = 0;
@@ -414,7 +414,7 @@ int mmce_sio2_tx(u8 port, u8 *buffer, u32 size, u8 timeout)
                 inl_sio2_regN_set(i, dma_element);
             }
 
-            sceSetSliceDMA(IOP_DMAC_SIO2in, &buffer[bytes_done], 0x100 >> 2, elements_do, DMAC_FROM_MEM);
+            sceSetSliceDMA(IOP_DMAC_SIO2in, (u8 *)&buffer[bytes_done], 0x100 >> 2, elements_do, DMAC_FROM_MEM);
             sceStartDMA(IOP_DMAC_SIO2in);
 
             bytes_done += elements_do * 256;
