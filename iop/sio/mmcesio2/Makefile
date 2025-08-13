@@ -12,8 +12,8 @@ IOP_IMPORT_INCS += \
 	system/stdio \
 	system/sysclib \
 	system/threadman \
-  system/iomanX \
-  sio/mmcesio2
+	system/iomanx \
+	sio/mmcesio2
 
 
 ifeq ($(DEBUG), 1)
