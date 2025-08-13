@@ -16,11 +16,13 @@
 #include "irx.h"
 
 /* Please keep these in alphabetical order!  */
+#include "dmacman.h"
 #include "intrman.h"
-#include "iomanX.h"
 #include "loadcore.h"
-#include "mmce_sio2.h"
 #include "stdio.h"
 #include "sysclib.h"
+#include "thbase.h"
+#include "thevent.h"
+#include "thsemap.h"
 
 #endif /* IOP_IRX_IMPORTS_H */

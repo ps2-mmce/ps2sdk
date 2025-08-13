@@ -45,6 +45,7 @@ enum mmce_cmds_ioctl {
 };
 
 //Called through devctl
+int mmce_cmd_ping_quick(void);
 int mmce_cmd_ping(void);
 int mmce_cmd_get_status(void);
 int mmce_cmd_get_card(void);

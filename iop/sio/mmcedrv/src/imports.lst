@@ -1,8 +1,3 @@
-iomanX_IMPORTS_start
-I_iomanX_AddDrv
-I_iomanX_DelDrv
-iomanX_IMPORTS_end
-
 intrman_IMPORTS_start
 I_CpuSuspendIntr
 I_CpuResumeIntr
@@ -21,13 +16,8 @@ I_mmce_sio2_rx
 I_mmce_sio2_tx
 mmcesio2_IMPORTS_end
 
+#ifdef DEBUG
 stdio_IMPORTS_start
 I_printf
 stdio_IMPORTS_end
-
-sysclib_IMPORTS_start
-I_memset
-I_strlen
-I_strcpy
-I_strcmp
-sysclib_IMPORTS_end
+#endif

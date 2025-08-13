@@ -7,71 +7,20 @@
 #include "irx_imports.h"
 
 #include "mmce_cmds.h"
-#include "mmce_fs.h"
 #include "mmce_sio2.h"
-#include "mmcedrv_config.h"
-#include "sio2man_hook.h"
 
 #include "module_debug.h"
 
-#define MAJOR 0
+#define MAJOR 1
 #define MINOR 1
 
 IRX_ID("mmcedrv", MAJOR, MINOR);
 
 extern struct irx_export_table _exp_mmcedrv;
 
-s64 mmcedrv_get_size(int fd)
-{
-    int res;
-    s64 position = -1;
+#define MMCEDRV_SETTING_PORT 0x0
 
-    u8 wrbuf[0xd];
-    u8 rdbuf[0x16];
-
-    wrbuf[0x0] = MMCE_ID;                       //Identifier
-    wrbuf[0x1] = MMCE_CMD_FS_LSEEK64;           //Command
-    wrbuf[0x2] = MMCE_RESERVED;                 //Reserved
-    wrbuf[0x3] = fd;                            //File descriptor
-
-    wrbuf[0x4] = 0;   //Offset
-    wrbuf[0x5] = 0;
-    wrbuf[0x6] = 0;
-    wrbuf[0x7] = 0;
-    wrbuf[0x8] = 0;
-    wrbuf[0x9] = 0;
-    wrbuf[0xa] = 0;
-    wrbuf[0xb] = 0;
-
-    wrbuf[0xc] = 2; //Whence SEEK_END
-
-    //Packet #1: Command, file descriptor, offset, and whence
-    mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(0xd, 0x16, wrbuf, rdbuf, &timeout_1s);
-    mmce_sio2_unlock();
-    if (res == -1) {
-        DPRINTF("%s ERROR: P1 - Timedout waiting for /ACK\n", __func__);
-        return -1;
-    }
-
-    if (rdbuf[0x1] != MMCE_REPLY_CONST) {
-        DPRINTF("%s ERROR: Invalid response from card. Got 0x%x, Expected 0x%x\n", __func__, rdbuf[0x1], MMCE_REPLY_CONST);
-        return -1;
-    }
-
-    position  = (s64)rdbuf[0xd] << 56;
-    position |= (s64)rdbuf[0xe] << 48;
-    position |= (s64)rdbuf[0xf] << 40;
-    position |= (s64)rdbuf[0x10] << 32;
-    position |= (s64)rdbuf[0x11] << 24;
-    position |= (s64)rdbuf[0x12] << 16;
-    position |= (s64)rdbuf[0x13] << 8;
-    position |= (s64)rdbuf[0x14];
-
-    DPRINTF("%s position %lli\n", __func__, position);
-
-    return position;
-}
+static u8 mmce_port;
 
 int mmcedrv_read_sector(int fd, u32 sector, u32 count, void *buffer)
 {
@@ -101,7 +50,7 @@ int mmcedrv_read_sector(int fd, u32 sector, u32 count, void *buffer)
     mmce_sio2_lock();
 
     //Packet #1: Command, file descriptor, and size
-    res = mmce_sio2_tx_rx_pio(0xB, 0xB, wrbuf, rdbuf, &timeout_2s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, 0xB, 0xB, wrbuf, rdbuf, TIMEOUT_ALARM_2S);
     if (res == -1) {
         DPRINTF("%s ERROR: P1 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -121,7 +70,7 @@ int mmcedrv_read_sector(int fd, u32 sector, u32 count, void *buffer)
     }
 
     //Packet #2 - n: Read data
-    res = mmce_sio2_rx_dma(buffer, (count * 2048));
+    res = mmce_sio2_rx(mmce_port, buffer, (count * 2048), TIMEOUT_ALARM_2S);
     if (res == -1) {
         DPRINTF("%s ERROR: P2 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -129,7 +78,7 @@ int mmcedrv_read_sector(int fd, u32 sector, u32 count, void *buffer)
     }
 
     //Packet #n + 1: Sectors read
-    res = mmce_sio2_tx_rx_pio(0x0, 0x5, wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, 0x0, 0x5, wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     if (res == -1) {
         DPRINTF("%s ERROR: P3 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -173,7 +122,7 @@ int mmcedrv_read(int fd, int size, void *ptr)
     mmce_sio2_lock();
 
     //Packet #1: Command, file descriptor, and size
-    res = mmce_sio2_tx_rx_pio(0xA, 0xA, wrbuf, rdbuf, &timeout_2s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, 0xA, 0xA, wrbuf, rdbuf, TIMEOUT_ALARM_2S);
     if (res == -1) {
         DPRINTF("%s ERROR: P1 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -193,7 +142,7 @@ int mmcedrv_read(int fd, int size, void *ptr)
     }
 
     //Packet #2 - n: Raw read data
-    res = mmce_sio2_rx_mixed(ptr, size);
+    res = mmce_sio2_rx(mmce_port, ptr, size, TIMEOUT_ALARM_2S);
     if (res == -1) {
         DPRINTF("%s ERROR: P2 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -201,7 +150,7 @@ int mmcedrv_read(int fd, int size, void *ptr)
     }
 
     //Packet #n + 1: Bytes read
-    res = mmce_sio2_tx_rx_pio(0x0, 0x6, wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, 0x0, 0x6, wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     if (res == -1) {
         DPRINTF("%s ERROR: P3 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -226,10 +175,13 @@ int mmcedrv_read(int fd, int size, void *ptr)
     return bytes_read;
 }
 
-int mmcedrv_write(int fd, int size, void *ptr)
+int mmcedrv_write(int fd, int size, u8 *ptr)
 {
     int res;
     int bytes_written;
+
+    u32 bytes_done = 0;
+    u32 transfer_size = 0;
 
     DPRINTF("%s: fd: %i, size: %i\n", __func__, fd, size);
 
@@ -250,7 +202,7 @@ int mmcedrv_write(int fd, int size, void *ptr)
     mmce_sio2_lock();
 
     //Packet #1: Command, file descriptor, and size
-    res = mmce_sio2_tx_rx_pio(0xA, 0xA, wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, 0xA, 0xA, wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     if (res == -1) {
         DPRINTF("%s ERROR: P1 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -269,16 +221,41 @@ int mmcedrv_write(int fd, int size, void *ptr)
         return -1;
     }
 
-    //Packet #2 - n: Raw write data
-    res = mmce_sio2_tx_mixed(ptr, size);
-    if (res == -1) {
-        DPRINTF("%s ERROR: P2 - Timedout waiting for /ACK\n", __func__);
-        mmce_sio2_unlock();
-        return -1;
+    while (1) {
+        //Waiting stage
+        res = mmce_sio2_tx_rx_pio(mmce_port, 0, 2, NULL, rdbuf, TIMEOUT_ALARM_2S);
+        if (res == -1) {
+            DPRINTF("%s ERROR: Timed out waiting for ready\n", __func__);
+            mmce_sio2_unlock();
+            return -1;
+        }
+
+        if (bytes_done >= size) {
+            DPRINTF("transfer loop finished\n");
+            break;
+        }
+
+        /* mmce_sio2_tx can send an unlimited amount of bytes 
+         * at a time but MMCE(s) only have a 4KB write buffer and 
+         * move to a waiting state when full, this is to give the MMCE 
+         * time to flush the data to the sdcard */
+        transfer_size = size - bytes_done;
+        if (transfer_size > 4096)
+            transfer_size = 4096;
+
+        //Transfer stage
+        res = mmce_sio2_tx(mmce_port, &ptr[bytes_done], transfer_size, TIMEOUT_ALARM_2S);
+        if (res == -1) {
+            DPRINTF("%s ERROR: Timed out during transfer\n", __func__);
+            mmce_sio2_unlock();
+            return -1;
+        }
+
+        bytes_done += res;
     }
 
     //Packets #n + 1: Bytes written
-    res = mmce_sio2_tx_rx_pio(0x0, 0x6, wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, 0x0, 0x6, wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     if (res == -1) {
         DPRINTF("%s ERROR: P3 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();
@@ -299,31 +276,36 @@ int mmcedrv_write(int fd, int size, void *ptr)
     return bytes_written;
 }
 
-int mmcedrv_lseek(int fd, int offset, int whence)
+s64 mmcedrv_lseek64(int fd, s64 offset, int whence)
 {
     int res;
-    int position = -1;
+    s64 position = -1;
 
     DPRINTF("%s: fd: %i, offset: %i, whence: %i\n", __func__, fd, offset, whence);
 
-    u8 wrbuf[0x9];
-    u8 rdbuf[0xe];
+    u8 wrbuf[0xd];
+    u8 rdbuf[0x16];
 
     wrbuf[0x0] = MMCE_ID;                       //Identifier
-    wrbuf[0x1] = MMCE_CMD_FS_LSEEK;             //Command
+    wrbuf[0x1] = MMCE_CMD_FS_LSEEK64;           //Command
     wrbuf[0x2] = MMCE_RESERVED;                 //Reserved
     wrbuf[0x3] = fd;                            //File descriptor
-    wrbuf[0x4] = (offset & 0xFF000000) >> 24;   //Offset
-    wrbuf[0x5] = (offset & 0x00FF0000) >> 16;
-    wrbuf[0x6] = (offset & 0x0000FF00) >> 8;
-    wrbuf[0x7] = (offset & 0x000000FF);
-    wrbuf[0x8] = (u8)(whence);                  //Whence
+
+    wrbuf[0x4] = (offset & 0xFF00000000000000) >> 56;   //Offset
+    wrbuf[0x5] = (offset & 0x00FF000000000000) >> 48;
+    wrbuf[0x6] = (offset & 0x0000FF0000000000) >> 40;
+    wrbuf[0x7] = (offset & 0x000000FF00000000) >> 32;
+    wrbuf[0x8] = (offset & 0x00000000FF000000) >> 24;
+    wrbuf[0x9] = (offset & 0x0000000000FF0000) >> 16;
+    wrbuf[0xa] = (offset & 0x000000000000FF00) >> 8;
+    wrbuf[0xb] = (offset & 0x00000000000000FF);
+    wrbuf[0xc] = (u8)(whence);  //Whence
 
     //Packet #1: Command, file descriptor, offset, and whence
     mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(0x9, 0xe, wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, 0xd, 0x16, wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     mmce_sio2_unlock();
-    
+
     if (res == -1) {
         DPRINTF("%s ERROR: P1 - Timedout waiting for /ACK\n", __func__);
         return -1;
@@ -334,12 +316,14 @@ int mmcedrv_lseek(int fd, int offset, int whence)
         return -1;
     }
 
-    position  = rdbuf[0x9] << 24;
-    position |= rdbuf[0xa] << 16;
-    position |= rdbuf[0xb] << 8;
-    position |= rdbuf[0xc];
-
-    DPRINTF("%s position %i\n", __func__, position);
+    position  = (s64)rdbuf[0xd] << 56;
+    position |= (s64)rdbuf[0xe] << 48;
+    position |= (s64)rdbuf[0xf] << 40;
+    position |= (s64)rdbuf[0x10] << 32;
+    position |= (s64)rdbuf[0x11] << 24;
+    position |= (s64)rdbuf[0x12] << 16;
+    position |= (s64)rdbuf[0x13] << 8;
+    position |= (s64)rdbuf[0x14];
 
     return position;
 }
@@ -350,19 +334,9 @@ void mmcedrv_config_set(int setting, int value)
     switch (setting) {
         case MMCEDRV_SETTING_PORT:
             if (value == 2 || value == 3)
-                mmce_sio2_set_port(value);
+                mmce_port = value;
             else
                 DPRINTF("Invalid port setting: %i\n", value);
-        break;
-
-        case MMCEDRV_SETTING_ACK_WAIT_CYCLES:
-            if (value < 5) {
-                mmce_sio2_update_ack_wait_cycles(value);
-            }
-        break;
-
-        case MMCEDRV_SETTING_USE_ALARMS:
-            mmce_sio2_set_use_alarm(value);
         break;
 
         default:
@@ -372,14 +346,12 @@ void mmcedrv_config_set(int setting, int value)
 
 int __start(int argc, char *argv[])
 {
-    int rv;
-
     DPRINTF("Multipurpose Memory Card Emulator Driver (MMCEDRV) v%d.%d by the MMCE team\n", MAJOR, MINOR);
 
-    //Install hooks
-    rv = mmce_sio2_init();
-    if (rv != 0) {
-        DPRINTF("mmce_sio2_init failed, rv %i\n", rv);
+    //Check for MMCESIO2
+    iop_library_t * lib = ioplib_getByName("mmcesio2");
+    if (lib == NULL) {
+        DPRINTF("MMCESIO2 not loaded, aborting. Please load MMCESIO2 first.\n");
         return MODULE_NO_RESIDENT_END;
     }
 
@@ -389,11 +361,11 @@ int __start(int argc, char *argv[])
         return MODULE_NO_RESIDENT_END;
     }
 
-    iop_library_t * lib_modload = ioplib_getByName("modload");
-    if (lib_modload != NULL) {
-        DPRINTF("modload 0x%x detected\n", lib_modload->version);
-        if (lib_modload->version > 0x102) //IOP is running a MODLOAD version which supports unloading IRX Modules
-            return MODULE_REMOVABLE_END; // and we do support getting unloaded...
+    lib = ioplib_getByName("modload");
+    if (lib != NULL) {
+        DPRINTF("modload 0x%x detected\n", lib->version);
+        if (lib->version > 0x102)           // IOP is running a MODLOAD version which supports unloading IRX Modules
+            return MODULE_REMOVABLE_END;    // and we do support getting unloaded...
     } else {
         DPRINTF("modload not detected! this is serious!\n");
     }
@@ -404,8 +376,6 @@ int __start(int argc, char *argv[])
 int __stop(int argc, char *argv[])
 {
     DPRINTF("Unloading module\n");
-    
-    mmce_sio2_deinit();
 
     return MODULE_NO_RESIDENT_END;
 }

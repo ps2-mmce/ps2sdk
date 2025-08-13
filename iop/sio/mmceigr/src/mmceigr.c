@@ -1,11 +1,14 @@
 #include <string.h>
 #include <sysclib.h>
+#include <loadcore.h>
 #include <tamtypes.h>
 
-#include "ioplib.h"
 #include "mmce_cmds.h"
 #include "sio2regs.h"
-#include "irx_imports.h"
+
+/* Since MMCEIGR is loaded on reset prior to other modules
+ * and runs once, it should be safe to access SIO2 registers directly
+ * without the need for MMCESIO2 */
 
 static u32 mmce_sio2_port_ctrl1;
 static u32 mmce_sio2_port_ctrl2;
@@ -114,16 +117,16 @@ static int cmd_set_card(int port, u8 type, u8 mode, u16 num)
 int _start(int argc, char *argv[])
 {
     int res;
-    int slot[2] = {0};
+    int port[2] = {0};
 
     if (argc < 1)
         return MODULE_NO_RESIDENT_END;
 
     if (argv[1][0] == '1')
-        slot[0] = 1;
+        port[0] = 1;
 
     if (argv[1][1] == '1')
-        slot[1] = 1;
+        port[1] = 1;
 
     mmce_sio2_port_ctrl1 =
         PCTRL0_ATT_LOW_PER(0x5)      |
@@ -140,7 +143,7 @@ int _start(int argc, char *argv[])
     u32 sio2_state = inl_sio2_ctrl_get();
 
     for (int i = 0; i < 2; i++) {
-        if (slot[i] == 1) {
+        if (port[i] == 1) {
             //Set port ctrls
             inl_sio2_portN_ctrl1_set(i + 2, mmce_sio2_port_ctrl1);
             inl_sio2_portN_ctrl2_set(i + 2, mmce_sio2_port_ctrl2);

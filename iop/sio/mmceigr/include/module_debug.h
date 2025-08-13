@@ -1,7 +1,7 @@
 #ifndef MODULE_DEBUG_H
 #define MODULE_DEBUG_H
 
-#define MODNAME "mmceman"
+#define MODNAME "mmceigr"
 
 //#define DEBUG
 

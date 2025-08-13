@@ -6,25 +6,33 @@
 # Licenced under Academic Free License version 2.0
 # Review ps2sdk README & LICENSE files for further details.
 
-$(info -- MMCEMAN)
+IOP_SRC_DIR ?= src/
+IOP_INC_DIR ?= include/
+
+IOP_INC_DIR += -I../mmceman/include/
+
 #Build full MMCEMAN for use with loader / homebrew
-IOP_OBJS = ioplib.o sio2man_hook.o mmce_sio2.o mmce_cmds.o mmce_fs.o imports.o mmceman.o
+IOP_BIN = irx/mmceman.irx
+IOP_OBJS = imports.o ioplib.o mmce_cmds.o mmceman.o mmce_fs.o
+
 #Needed for iomanX
 IOP_CFLAGS += -DIOMANX_OLD_NAME_COMPATIBILITY=0 -DIOMANX_OLD_NAME_ADDDELDRV=0
-IOP_INCS += \
-	-I$(PS2SDKSRC)/iop/system/dmacman/include \
-	-I$(PS2SDKSRC)/iop/system/intrman/include \
-	-I$(PS2SDKSRC)/iop/system/loadcore/include \
-	-I$(PS2SDKSRC)/iop/system/sio2man/include \
-	-I$(PS2SDKSRC)/iop/system/stdio/include \
-	-I$(PS2SDKSRC)/iop/system/sysclib/include \
-	-I$(PS2SDKSRC)/iop/system/threadman/include \
-	-I$(PS2SDKSRC)/iop/system/iomanx/include 
+IOP_IMPORT_INCS += \
+	system/dmacman \
+	system/intrman \
+	system/loadcore \
+	system/sio2man \
+	system/stdio \
+	system/sysclib \
+	system/threadman \
+  system/iomanX \
+  sio/mmcesio2
 
 ifeq ($(DEBUG), 1)
-  $(info -- MMCEMAN debug enabled)
+  $(info -- MMCEMAN Debug)
   IOP_CFLAGS += -DDEBUG
-  IOP_CFLAGS += -DDEBUG=1
+else
+  $(info -- MMCEMAN)
 endif
 
 include $(PS2SDKSRC)/Defs.make

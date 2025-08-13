@@ -1,8 +1,8 @@
 IOP_SRC_DIR ?= src/
 IOP_INC_DIR ?= include/
 
-IOP_INC_DIR += -I../mmceman/include/
-IOP_INC_DIR += -I../mmcesio2/include/
+IOP_BIN = irx/mmcesio2.irx
+IOP_OBJS = exports.o imports.o ioplib.o mmce_sio2.o sio2man_hook.o
 
 IOP_IMPORT_INCS += \
 	system/dmacman \
@@ -14,16 +14,13 @@ IOP_IMPORT_INCS += \
 	system/threadman \
   system/iomanX \
   sio/mmcesio2
-  
-#Build single shot module to issue switch to bootcard on IGR
-IOP_BIN = irx/mmceigr.irx
-IOP_OBJS = mmceigr.o
+
 
 ifeq ($(DEBUG), 1)
-  $(info -- MMCEIGR Debug)
+  $(info -- MMCESIO2 Debug)
   IOP_CFLAGS += -DDEBUG
 else
-  $(info -- MMCEIGR)
+  $(info -- MMCESIO2)
 endif
 
 

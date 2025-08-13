@@ -1,0 +1,23 @@
+void _retonly(void) {}
+
+int _ret0(void) {
+    return 0;
+}
+
+int _dummy(void) {
+    return 1;
+}
+
+DECLARE_EXPORT_TABLE(mmcesio2, 1, 1)
+    DECLARE_EXPORT(_start)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_stop)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(mmce_sio2_set_intr_handler)
+    DECLARE_EXPORT(mmce_sio2_clear_intr_handler)
+    DECLARE_EXPORT(mmce_sio2_lock)
+    DECLARE_EXPORT(mmce_sio2_unlock)
+    DECLARE_EXPORT(mmce_sio2_tx_rx_pio)
+    DECLARE_EXPORT(mmce_sio2_rx)
+    DECLARE_EXPORT(mmce_sio2_tx)
+END_EXPORT_TABLE

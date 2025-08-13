@@ -8,7 +8,7 @@
 # Review ps2sdk README & LICENSE files for further details.
 #
 # taken from MX4SIO driver for simplicity.
-# all credits go to maximus32 and qnox
+# all credits go to maximus32, wisi, and others.
 */
 #ifndef SIO2REGS_H
 #define SIO2REGS_H
@@ -48,28 +48,32 @@
 
 // Bit-field definitions:
 
-/* /ATT (/CS) HIGH between 2 transfers in the SIO2 transfer queue
-* This value is patched to 0x60 on PS2's w/ PPC-IOPs */
+/* Time between /ATT (/CS) LOW and the falling edge of the first /CLK pulse in clock cycles */
 #define PCTRL0_ATT_LOW_PER(x)      ((((u32)(x)) << 0) & 0xFF)
+
+/* Minimum /ATT (/CS) HIGH time (in clock cycles) between 2 transfers in the SIO2 transfer queue
+ * PS2's w/ PPC-IOPs (75K+) patch this value to 0x60 in software */
 #define PCTRL0_ATT_MIN_HIGH_PER(x) ((((u32)(x)) << 8) & 0xFF00)
 #define PCTRL0_BAUD0_DIV(x)        ((((u32)(x)) << 16) & 0xFF0000)
 #define PCTRL0_BAUD1_DIV(x)        ((((u32)(x)) << 24) & 0xFF000000)
 
 /* If CTRL_USE_ACK_WAIT_TIMEOUT is 1, this determines how many clock cycles
- * the SIO2 will wait for an occurence of /ACK low before aborting the current transfer 
+ * the SIO2 will wait for an occurrence of /ACK low before aborting the current transfer 
  
  * Ex: Clock of 24MHz, period of ~41ns, PCTRL1_ACK_TIMEOUT_AFTER of 50 =
-    41ns * 50 = 2050ns, The SIO2 will wait 2050ns for /ACK low before timing out */
+    41ns * 50 = 2050ns, The SIO2 will wait 2050ns for /ACK low after each byte before timing out */
 #define PCTRL1_ACK_TIMEOUT_AFTER(x)  ((((u32)(x)) << 0) & 0xFFFF)
 
 /* Note: PCTRL1_WAIT_CYCLES_AFTER_ACK_LOW:
- * The time between /ACK falling edge -> next /CLK falling edge in clock cycles.
- * FATs appear to have a ~120ns delay between the rising edge of
- * the last clock to the start of /ACK low sampling, making the total
- * time between 2 bytes closer to ~120ns + (WAIT_CYCLES_AFTER_ACK_LOW * clock cycles) 
- * 
- * PS2's w/ PPC-IOPs appear to start /ACK low sampling after 41ns (or 1 * 24MHz clock cycle) 
- * but seem to have a minimum time between the /ACK falling edge -> next /CLK falling edge */
+ * The minimum time between detecting /ACK low -> next /CLK falling edge in clock cycles
+ *
+ * PS2's w/ MIPS-IOPS (<=70K) appear to have a ~125ns delay between the rising edge of the last
+ * /CLK pulse and the start of /ACK low sampling making the total time between any
+ * 2 bytes closer to ~125ns + ((WAIT_CYCLES_AFTER_ACK_LOW + 1) * clock period)
+ *
+ * PS2's w/ PPC-IOPs (75K+) appear to start /ACK low sampling after 41ns (or 1 * 24MHz clock period) 
+ * but seem to have a fixed minimum time of 6-7 clock cycles (@ 24MHz) between detecting 
+ * /ACK low -> next /CLK falling edge */
 #define PCTRL1_WAIT_CYCLES_AFTER_ACK_LOW(x)   ((((u32)(x)) << 16) & 0xFF0000)
 #define PCTRL1_UNK24(x)            ((((u32)(x))&1) << 24)
 #define PCTRL1_IF_MODE_SPI_DIFF(x) ((((u32)(x))&1) << 25)
@@ -77,7 +81,7 @@
 #define TR_CTRL_PORT_NR(x)          ((((u32)(x))&0x3) << 0)
 #define TR_CTRL_PAUSE(x)            ((((u32)(x))&1) << 2)
 #define TR_CTRL_UNK03(x)            ((((u32)(x))&1) << 3)
-// Each of the folowing is 0 for PIO transfer in the given direction. to select DMA, set to 1.
+// Each of the following is 0 for PIO transfer in the given direction. to select DMA, set to 1.
 #define TR_CTRL_TX_MODE_PIO_DMA(x)  ((((u32)(x))&1) << 4)
 #define TR_CTRL_RX_MODE_PIO_DMA(x)  ((((u32)(x))&1) << 5)
 /*
@@ -108,13 +112,13 @@ normal    special
 #define CTRL_RESET_FIFOS(x)          ((((u32)(x))&1) << 3)
 #define CTRL_USE_ACK_WAIT_TIMEOUT(x) ((((u32)(x))&1) << 4)
 #define CTRL_NO_MISSING_ACK_ERR(x)   ((((u32)(x))&1) << 5)
-// bit6 unknonw r/o, 0
+// bit6 unknown r/o, 0
 #define CTRL_UNK06(x)                ((((u32)(x))&1) << 6)
-// bit7 unknonw r/w, usually set to 1 by software
+// bit7 unknown r/w, usually set to 1 by software
 #define CTRL_UNK07(x)                ((((u32)(x))&1) << 7)
 #define CTRL_ERROR_INTR_EN(x)        ((((u32)(x))&1) << 8)
 #define CTRL_TR_COMP_INTR_EN(x)      ((((u32)(x))&1) << 9)
-// bits 10, 11 unknonw r/w, usually set to 0 by software
+// bits 10, 11 unknown r/w, usually set to 0 by software
 #define CTRL_UNK10(x)                ((((u32)(x))&1) << 10)
 #define CTRL_UNK11(x)                ((((u32)(x))&1) << 11)
 // Unknown r/o, 0:
@@ -130,13 +134,13 @@ normal    special
 #define STAT_UNK0706(x)              ((((u32)(x)) >> 6) & 3)
 // Queue slot number that is going to be processed next (0-15):
 #define STAT_QUEUE_SLOT_PROC(x)      ((((u32)(x)) >> 8) & 0xF)
-// Kept clear only while tranfer is running, and set while idle. 1 can also signify transfer completion:
+// Kept clear only while transfer is running, and set while idle. 1 can also signify transfer completion:
 #define STAT_TR_IDLE(x)              ((((u32)(x)) >> 12) & 1)
 // FIFO underflow / overflow errors: (I am not sure if they really correspond to the TX and RX FIFOs)
 #define STAT_ERR_TX_FIFO_UOFLOW(x)   ((((u32)(x)) >> 13) & 1)
 #define STAT_ERR_RX_FIFO_UOFLOW(x)   ((((u32)(x)) >> 14) & 1)
 #define STAT_ERR_ACK_MISSING(x)      ((((u32)(x)) >> 15) & 1)
-// Flags used to determine the transfers of which queue slots triggered erroirs. Slot = 0 - 15:
+// Flags used to determine the transfers of which queue slots triggered errors. Slot = 0 - 15:
 #define STAT_ERR_QUEUE_SLOT(x, slot) ((((u32)(x)) >> (slot + 16)) & 1)
 
 // 8270 SIO2 Device connected detection status register. (read-only)

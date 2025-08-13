@@ -6,10 +6,10 @@
 #include "ioplib.h"
 #include "irx_imports.h"
 
-#include "sio2man_hook.h"
-#include "mmce_sio2.h"
 #include "mmce_cmds.h"
 #include "mmce_fs.h"
+#include "mmce_sio2.h"
+#include "mmceman.h"
 
 #include "module_debug.h"
 
@@ -20,15 +20,17 @@ const char *mmce_product_ids[] = {"Unknown", "SD2PSX", "MemCard PRO2", "PicoMemc
 
 IRX_ID("mmceman", MAJOR, MINOR);
 
+u8 mmce_port;
+
 static void mmce_init(int port)
 {
     int res = -1;
     int id = 0;
 
-    mmce_sio2_set_port(port);
+    mmce_port = port;
 
     for (int i = 0; i < 6; i++) {
-        res = mmce_cmd_ping();
+        res = mmce_cmd_ping_quick();
         if (res != -1) {
             DPRINTF("Found card in port %i\n", port);
 
@@ -56,14 +58,12 @@ static void mmce_init(int port)
 
 int __start(int argc, char *argv[])
 {
-    int rv;
-
     printf("Multipurpose Memory Card Emulator Manager (MMCEMAN) v%d.%d by the MMCE team\n", MAJOR, MINOR);
 
-    //Install hooks
-    rv = mmce_sio2_init();
-    if (rv != 0) {
-        DPRINTF("%s: mmce_sio2_init failed, rv %i\n", __func__, rv);
+    //Check for MMCESIO2
+    iop_library_t * lib = ioplib_getByName("mmcesio2");
+    if (lib == NULL) {
+        DPRINTF("MMCESIO2 not loaded, aborting. Please load MMCESIO2 first.\n");
         return MODULE_NO_RESIDENT_END;
     }
 
@@ -74,11 +74,11 @@ int __start(int argc, char *argv[])
     //Attach filesystem to iomanX
     mmce_fs_register();
 
-    iop_library_t * lib_modload = ioplib_getByName("modload");
-    if (lib_modload != NULL) {
-        DPRINTF("modload 0x%x detected\n", lib_modload->version);
-        if (lib_modload->version > 0x102) //IOP is running a MODLOAD version which supports unloading IRX Modules
-            return MODULE_REMOVABLE_END; // and we do support getting unloaded...
+    lib = ioplib_getByName("modload");
+    if (lib != NULL) {
+        DPRINTF("modload 0x%x detected\n", lib->version);
+        if (lib->version > 0x102)           // IOP is running a MODLOAD version which supports unloading IRX Modules
+            return MODULE_REMOVABLE_END;    // and we do support getting unloaded...
     } else {
         DPRINTF("modload not detected! this is serious!\n");
     }
@@ -89,9 +89,7 @@ int __start(int argc, char *argv[])
 int __stop(int argc, char *argv[])
 {
     DPRINTF("Unloading module\n");
-    
     mmce_fs_unregister();
-    mmce_sio2_deinit();
 
     return MODULE_NO_RESIDENT_END;
 }

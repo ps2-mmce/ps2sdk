@@ -4,8 +4,46 @@
 
 #include "mmce_sio2.h"
 #include "mmce_cmds.h"
+#include "mmceman.h"
 
 #include "module_debug.h"
+
+//Use /ACK timeout of ~40us instead of IOP alarm
+int mmce_cmd_ping_quick(void)
+{
+    int res;
+
+    u8 wrbuf[0x7];
+    u8 rdbuf[0x7];
+
+    wrbuf[0x0] = MMCE_ID;          //identifier
+    wrbuf[0x1] = MMCE_CMD_PING;    //command
+    wrbuf[0x2] = MMCE_RESERVED;    //reserved byte
+    wrbuf[0x3] = 0;
+    wrbuf[0x4] = 0;
+    wrbuf[0x5] = 0;
+    wrbuf[0x6] = 0;
+
+    mmce_sio2_lock();
+    res = mmce_sio2_tx_rx_pio(mmce_port, sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, TIMEOUT_USE_ACK_TIMEOUT);
+    mmce_sio2_unlock();
+    if (res == -1) {
+        DPRINTF("%s ERROR: Timedout waiting for /ACK\n", __func__);
+        return -1;
+    }
+
+    //bits 24-16: protocol ver
+    //bits 16-8: product id
+    //bits 8-0: revision id
+    if (rdbuf[0x1] == MMCE_REPLY_CONST) {
+        res = rdbuf[0x3] << 16 | rdbuf[0x4] << 8 | rdbuf[0x5];
+    } else {
+        DPRINTF("%s ERROR: Invalid response from card. Got 0x%x, Expected 0x%x\n", __func__, rdbuf[0x1], MMCE_REPLY_CONST);
+        res = -1;
+    }
+
+    return res;
+}
 
 int mmce_cmd_ping(void)
 {
@@ -23,7 +61,7 @@ int mmce_cmd_ping(void)
     wrbuf[0x6] = 0;
 
     mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, &timeout_200ms);
+    res = mmce_sio2_tx_rx_pio(mmce_port, sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, TIMEOUT_ALARM_200MS);
     mmce_sio2_unlock();
     if (res == -1) {
         DPRINTF("%s ERROR: Timedout waiting for /ACK\n", __func__);
@@ -56,7 +94,7 @@ int mmce_cmd_get_status(void)
     wrbuf[0x2] = MMCE_RESERVED;          //reserved byte
 
     mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     mmce_sio2_unlock();
     if (res == -1) {
         DPRINTF("%s ERROR: Timedout waiting for /ACK\n", __func__);
@@ -85,7 +123,7 @@ int mmce_cmd_get_card(void)
     wrbuf[0x2] = MMCE_RESERVED;      //reserved byte
 
     mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     mmce_sio2_unlock();
     if (res == -1) {
         DPRINTF("%s ERROR: Timedout waiting for /ACK\n", __func__);
@@ -118,7 +156,7 @@ int mmce_cmd_set_card(u8 type, u8 mode, u16 num)
     wrbuf[0x6] = num & 0xFF;        //card number lower 8 bits
 
     mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     mmce_sio2_unlock();
     if (res == -1) {
         DPRINTF("%s ERROR: Timedout waiting for /ACK\n", __func__);
@@ -145,7 +183,7 @@ int mmce_cmd_get_channel(void)
     wrbuf[0x2] = MMCE_RESERVED;          //reserved byte
 
     mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     mmce_sio2_unlock();
     if (res == -1) {
         DPRINTF("%s ERROR: Timedout waiting for /ACK\n", __func__);
@@ -177,7 +215,7 @@ int mmce_cmd_set_channel(u8 mode, u16 num)
     wrbuf[0x5] = num & 0xFF;            //channel number lower 8 bits
 
     mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     mmce_sio2_unlock();
     if (res == -1) {
         DPRINTF("%s ERROR: Timedout waiting for /ACK\n", __func__);
@@ -204,7 +242,7 @@ int mmce_cmd_get_gameid(void *ptr)
     wrbuf[0x2] = MMCE_RESERVED;       //reserved byte
 
     mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     mmce_sio2_unlock();
     if (res == -1) {
         DPRINTF("%s ERROR: Timedout waiting for /ACK\n", __func__);
@@ -212,7 +250,7 @@ int mmce_cmd_get_gameid(void *ptr)
     }
 
     if (rdbuf[0x1] == MMCE_REPLY_CONST) {
-        char* str = (char*)&rdbuf[0x4];
+        char* str = (char *)&rdbuf[0x4];
         strcpy(ptr, str);
         res = 0;
     } else {
@@ -237,11 +275,11 @@ int mmce_cmd_set_gameid(void *ptr)
     wrbuf[0x2] = MMCE_RESERVED;       //reserved byte
     wrbuf[0x3] = len;                 //gameid length
 
-    char *str = (char*)&wrbuf[0x4];
+    char *str = (char *)&wrbuf[0x4];
     strcpy(str, ptr);
 
     mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(len + 5, sizeof(rdbuf), wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, len + 5, sizeof(rdbuf), wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     mmce_sio2_unlock();
     if (res == -1) {
         DPRINTF("%s ERROR: Timedout waiting for /ACK\n", __func__);
@@ -268,7 +306,7 @@ int mmce_cmd_reset(void)
     wrbuf[0x2] = MMCE_RESERVED;     //reserved byte
 
     mmce_sio2_lock();
-    res = mmce_sio2_tx_rx_pio(sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, &timeout_1s);
+    res = mmce_sio2_tx_rx_pio(mmce_port, sizeof(wrbuf), sizeof(rdbuf), wrbuf, rdbuf, TIMEOUT_ALARM_1S);
     mmce_sio2_unlock();
     if (res == -1) {
         DPRINTF("%s ERROR: Timedout waiting for /ACK\n", __func__);

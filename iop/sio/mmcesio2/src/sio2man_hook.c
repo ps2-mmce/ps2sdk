@@ -46,10 +46,9 @@ static void _sio2_transfer_init(psio2_transfer_init init_func)
 // Generic sio2man transfer function
 static int _sio2_transfer(psio2_transfer transfer_func, sio2_transfer_data_t *td)
 {
-    int rv;
+    int rv = 0;
  
     //DPRINTF("%s\n", __FUNCTION__);
-
     WaitSema(lock_sema2);
     rv = transfer_func(td);
     SignalSema(lock_sema2);
@@ -218,7 +217,7 @@ int sio2man_hook_init()
     lib = ioplib_getByName("sio2man");
     if (lib != NULL) {
         // Get sio2man intr handler
-        sio2man_intr_handler_ptr = mmce_sio2_intrman_internals_ptr->interrupt_handler_table[17].handler; //TODO: mode set in lowest 2 bits
+        sio2man_intr_handler_ptr = mmce_sio2_intrman_internals_ptr->interrupt_handler_table[17].handler;
         sio2man_intr_arg_ptr = mmce_sio2_intrman_internals_ptr->interrupt_handler_table[17].userdata;
         DPRINTF("Got SIO2MAN intr handler @ 0x%p, arg @ 0x%p\n", sio2man_intr_handler_ptr, sio2man_intr_arg_ptr);
     
