@@ -25,8 +25,8 @@ IOP_IMPORT_INCS += \
 	system/stdio \
 	system/sysclib \
 	system/threadman \
-  system/iomanX \
-  sio/mmcesio2
+	system/iomanX \
+	sio/mmcesio2
 
 ifeq ($(DEBUG), 1)
   $(info -- MMCEMAN Debug)
@@ -35,7 +35,6 @@ else
   $(info -- MMCEMAN)
 endif
 
-include $(PS2SDKSRC)/Defs.make
 include $(PS2SDKSRC)/iop/Rules.bin.make
 include $(PS2SDKSRC)/iop/Rules.make
 include $(PS2SDKSRC)/iop/Rules.release
