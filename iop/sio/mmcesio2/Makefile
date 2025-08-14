@@ -1,3 +1,11 @@
+# _____     ___ ____     ___ ____
+#  ____|   |    ____|   |        | |____|
+# |     ___|   |____ ___|    ____| |    \    PS2DEV Open Source Project.
+#-----------------------------------------------------------------------
+# Copyright 2001-2004, ps2dev - http://www.ps2dev.org
+# Licenced under Academic Free License version 2.0
+# Review ps2sdk README & LICENSE files for further details.
+
 IOP_SRC_DIR ?= src/
 IOP_INC_DIR ?= include/
 
@@ -5,7 +13,6 @@ IOP_BIN = irx/mmcesio2.irx
 IOP_OBJS = exports.o imports.o ioplib.o mmce_sio2.o sio2man_hook.o
 
 IOP_IMPORT_INCS += \
-	sio/mmcesio2 \
 	system/dmacman \
 	system/iomanx \
 	system/intrman \
