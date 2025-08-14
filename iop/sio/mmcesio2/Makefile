@@ -5,15 +5,15 @@ IOP_BIN = irx/mmcesio2.irx
 IOP_OBJS = exports.o imports.o ioplib.o mmce_sio2.o sio2man_hook.o
 
 IOP_IMPORT_INCS += \
+	sio/mmcesio2 \
 	system/dmacman \
+	system/iomanx \
 	system/intrman \
 	system/loadcore \
 	system/sio2man \
 	system/stdio \
 	system/sysclib \
-	system/threadman \
-	system/iomanx \
-	sio/mmcesio2
+	system/threadman
 
 
 ifeq ($(DEBUG), 1)

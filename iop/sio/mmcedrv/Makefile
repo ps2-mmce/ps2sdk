@@ -5,15 +5,15 @@ IOP_INC_DIR += -I../mmceman/include/
 IOP_INC_DIR += -I../mmcesio2/include/
 
 IOP_IMPORT_INCS += \
+	sio/mmcesio2 \
 	system/dmacman \
+	system/iomanx \
 	system/intrman \
 	system/loadcore \
 	system/sio2man \
 	system/stdio \
 	system/sysclib \
-	system/threadman \
-  system/iomanX \
-  sio/mmcesio2
+	system/threadman
 
 #Build minimal MMCEDRV for use in-game
 IOP_BIN = irx/mmcedrv.irx

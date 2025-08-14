@@ -18,15 +18,15 @@ IOP_OBJS = imports.o ioplib.o mmce_cmds.o mmceman.o mmce_fs.o
 #Needed for iomanX
 IOP_CFLAGS += -DIOMANX_OLD_NAME_COMPATIBILITY=0 -DIOMANX_OLD_NAME_ADDDELDRV=0
 IOP_IMPORT_INCS += \
+	sio/mmcesio2 \
 	system/dmacman \
 	system/intrman \
+	system/iomanx \
 	system/loadcore \
 	system/sio2man \
 	system/stdio \
 	system/sysclib \
-	system/threadman \
-	system/iomanX \
-	sio/mmcesio2
+	system/threadman
 
 ifeq ($(DEBUG), 1)
   $(info -- MMCEMAN Debug)
