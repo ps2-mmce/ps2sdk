@@ -10,7 +10,6 @@ IOP_SRC_DIR ?= src/
 IOP_INC_DIR ?= include/
 
 #Build full MMCEMAN for use with loader / homebrew
-IOP_BIN = irx/mmceman.irx
 IOP_OBJS = imports.o ioplib.o mmce_cmds.o mmceman.o mmce_fs.o
 
 #Needed for iomanX

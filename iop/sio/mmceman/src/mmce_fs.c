@@ -807,7 +807,7 @@ int mmce_fs_dread(iomanX_iop_file_t *file, iox_dirent_t *dirent)
     filename_len = rdbuf[0x29];
 
     //Packet #n + 2: Filename
-    res = mmce_sio2_tx_rx_pio(mmce_port, 0x0, filename_len, NULL, (u8 *)dirent->name, TIMEOUT_ALARM_1S);
+    res = mmce_sio2_tx_rx_pio(mmce_port, 0x0, filename_len, NULL, (u8 *)&dirent->name[0], TIMEOUT_ALARM_1S);
     if (res == -1) {
         DPRINTF("%s ERROR: P4 - Timedout waiting for /ACK\n", __func__);
         mmce_sio2_unlock();

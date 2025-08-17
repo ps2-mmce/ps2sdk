@@ -22,7 +22,6 @@ IOP_IMPORT_INCS += \
 	system/threadman
 
 #Build minimal MMCEDRV for use in-game
-IOP_BIN = irx/mmcedrv.irx
 IOP_OBJS = imports.o ioplib.o exports.o mmcedrv.o
 
 ifeq ($(DEBUG), 1)

@@ -7,10 +7,8 @@
 # Review ps2sdk README & LICENSE files for further details.
 
 IOP_SRC_DIR ?= src/
-IOP_INC_DIR ?= include/
 
 IOP_IMPORT_INCS += \
-	sio/mmcesio2 \
 	sio/mmceman \
 	system/dmacman \
 	system/iomanx \
@@ -22,7 +20,6 @@ IOP_IMPORT_INCS += \
 	system/threadman
 
 #Build single shot module to issue switch to bootcard on IGR
-IOP_BIN = irx/mmceigr.irx
 IOP_OBJS = mmceigr.o
 
 ifeq ($(DEBUG), 1)
@@ -31,7 +28,6 @@ ifeq ($(DEBUG), 1)
 else
   $(info -- MMCEIGR)
 endif
-
 
 include $(PS2SDKSRC)/Defs.make
 include $(PS2SDKSRC)/iop/Rules.bin.make
